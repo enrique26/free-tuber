@@ -84,7 +84,10 @@ function startAnimationLoop(app, layers, audioProcessor) {
   function animate() {
     // Process audio if microphone is enabled
     if (appState.isMicEnabled && !appState.isAudioTestMode) {
-      audioProcessor();
+      // Fire and forget, but don't block animation
+      audioProcessor().catch(error => {
+        console.error('Error in audio processor:', error);
+      });
     }
 
     // Update mouth animation based on phoneme
@@ -101,23 +104,73 @@ function startAnimationLoop(app, layers, audioProcessor) {
 
 /**
  * Audio processing callback for animation loop
+ * Processes buffered audio through Rhubarb for lip sync
  */
 function createAudioProcessor() {
-  let bufferQueue = [];
+  let lastProcessTime = 0;
+  const PROCESS_INTERVAL = 50; // Process every 50ms to avoid overwhelming Rhubarb
+  let isProcessing = false;
 
   return async function processAudio() {
-    // Get current audio buffer from microphone (this is populated by audio.js)
-    const audioBuffer = window.audioBufferQueue?.shift();
-    if (!audioBuffer) return;
-
-    // Send to Rhubarb for lip sync analysis
-    const phonemes = await processAudioBuffer(audioBuffer);
+    const now = Date.now();
     
-    if (phonemes && phonemes.length > 0) {
-      // Get the most recent phoneme
-      const latestPhoneme = phonemes[phonemes.length - 1];
-      appState.phonemeCategory = getPhonemeCategory(latestPhoneme);
-      appState.currentMouthState = appState.phonemeCategory;
+    // Throttle processing to avoid excessive computation
+    if (now - lastProcessTime < PROCESS_INTERVAL) {
+      return;
+    }
+
+    // Prevent concurrent processing
+    if (isProcessing) {
+      return;
+    }
+
+    // Check if there's audio to process
+    if (!window.audioBufferQueue || window.audioBufferQueue.length === 0) {
+      return;
+    }
+
+    isProcessing = true;
+    lastProcessTime = now;
+
+    try {
+      // Get the oldest audio buffer (FIFO - first in, first out)
+      const audioBuffer = window.audioBufferQueue.shift();
+      
+      if (!audioBuffer) {
+        return;
+      }
+
+      // Ensure we have the audio data
+      if (!audioBuffer.data) {
+        console.warn('⚠️ Audio buffer missing data property');
+        return;
+      }
+
+      console.log(`🎤 Processing audio buffer: ${audioBuffer.data.length} samples`);
+
+      // Send to Rhubarb for lip sync analysis
+      const phonemes = await processAudioBuffer(audioBuffer);
+      
+      if (!phonemes || phonemes.length === 0) {
+        console.warn('⚠️ No phonemes detected');
+        return;
+      }
+
+      // Get the first phoneme (most recent/relevant)
+      const currentPhoneme = phonemes[0];
+      const mouthCategory = getPhonemeCategory(currentPhoneme);
+
+      // Update global state
+      appState.phonemeCategory = mouthCategory;
+      appState.currentMouthState = mouthCategory;
+
+      console.log(`🗣️ Phoneme: ${currentPhoneme?.phoneme || 'SILENT'} → Mouth: ${mouthCategory}`);
+
+    } catch (error) {
+      console.error('❌ Error processing audio buffer:', error);
+      console.error('Error details:', error.message, error.stack);
+    } finally {
+      isProcessing = false;
     }
   };
 }
@@ -297,3 +350,27 @@ main();
 
 // Export for debugging
 window.appState = appState;
+
+/**
+ * Diagnostic function to check lip sync status
+ * Call in console: window.getLipSyncDiagnostics()
+ */
+window.getLipSyncDiagnostics = function() {
+  return {
+    micEnabled: appState.isMicEnabled,
+    audioTestMode: appState.isAudioTestMode,
+    currentPhoneme: appState.phonemeCategory,
+    currentMouthState: appState.currentMouthState,
+    audioBuffersQueued: window.audioBufferQueue?.length || 0,
+    audioContextState: window.audioContext?.state,
+  };
+};
+
+/**
+ * Force a mouth test
+ * Call in console: window.testMouthAnimation('a')
+ */
+window.testMouthAnimation = function(mouthType) {
+  appState.phonemeCategory = mouthType;
+  console.log(`✅ Testing mouth: ${mouthType}`);
+};

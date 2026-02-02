@@ -274,3 +274,15 @@ export function simulatePhonemeSequence(phonemes) {
   }
   return result;
 }
+
+/**
+ * Get diagnostic info about current lip sync state
+ */
+export function getLipSyncDiagnostics() {
+  return {
+    rhubarb: rhubarb ? 'loaded' : 'not loaded',
+    phonemeHistoryLength: phonemeHistory.length,
+    lastPhoneme: phonemeHistory[phonemeHistory.length - 1] || null,
+    smoothingFactor: SMOOTHING_FACTOR,
+  };
+}
