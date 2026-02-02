@@ -165,7 +165,15 @@ add the basic sounds for mouth movement, eyes and body, in the public/assets fol
 
 ## 🎬 OBS Integration
 
-### Browser Source Setup
+### Window Source Setup (recomended)
+
+1. **open a independent window of your browser**: `https://localhost:5173`
+2. **in the browser window enable the microphone**
+3. **in OBS → Sources → window capture**
+4. **choose the window capture name:**: `vTuber 2d animator (or look only for the window where you are running the app)`
+5. **after add the window capture**: `resize the view of the window capute while holding the alt key (opt for mac) to crop the view showing only the character area`
+
+### Browser Source Setup (experimental- in development)
 
 1. **OBS → Sources → Browser**
 2. **URL**: `https://localhost:5173`
