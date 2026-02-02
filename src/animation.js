@@ -295,6 +295,55 @@ export async function loadAssetSprite(assetType, assetUrl) {
 }
 
 /**
+ * Load all default asset images from assets folder
+ */
+export async function loadDefaultAssets(assetBasePath = '/assets') {
+  const mouthTypes = ['idle', 'a', 'e', 'o', 'u', 'closed', 'm', 'f'];
+  const eyeStates = ['open', 'closed'];
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    // Load mouth sprites
+    for (const type of mouthTypes) {
+      try {
+        await loadAssetSprite(`mouth_${type}`, `${assetBasePath}/mouth_${type}.png`);
+        successCount++;
+      } catch (error) {
+        console.warn(`⚠️ Could not load mouth_${type}`);
+        failureCount++;
+      }
+    }
+
+    // Load eye sprites
+    for (const state of eyeStates) {
+      try {
+        await loadAssetSprite(`eye_${state}`, `${assetBasePath}/eye_${state}.png`);
+        successCount++;
+      } catch (error) {
+        console.warn(`⚠️ Could not load eye_${state}`);
+        failureCount++;
+      }
+    }
+
+    // Load body sprite
+    try {
+      await loadAssetSprite('body', `${assetBasePath}/body.png`);
+      successCount++;
+    } catch (error) {
+      console.warn('⚠️ Could not load body');
+      failureCount++;
+    }
+
+    console.log(`✅ Default assets loaded: ${successCount} succeeded, ${failureCount} failed`);
+    return { success: true, successCount, failureCount };
+  } catch (error) {
+    console.error('Error loading default assets:', error);
+    return { success: false, successCount, failureCount };
+  }
+}
+
+/**
  * Get current animation state (for diagnostics)
  */
 export function getAnimationState() {

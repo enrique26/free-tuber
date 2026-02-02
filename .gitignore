@@ -35,5 +35,6 @@ yarn-error.log*
 
 # Runtime
 public/assets/user-uploads/
+public/assets/*.png
 temp/
 cache/

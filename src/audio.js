@@ -45,6 +45,76 @@ export async function initAudio() {
 /**
  * Start microphone capture
  */
+// export async function startMicrophone() {
+//   try {
+//     if (mediaStream) {
+//       console.warn('Microphone already running');
+//       return { success: true };
+//     }
+
+//     // Request microphone with proper constraints
+//     mediaStream = await navigator.mediaDevices.getUserMedia({
+//       audio: {
+//         echoCancellation: true,
+//         noiseSuppression: true,
+//         autoGainControl: false,
+//         sampleRate: 16000,
+//       },
+//       video: false,
+//     });
+
+//     console.log('✅ Microphone permission granted');
+
+//     // Create audio nodes
+//     const source = audioContext.createMediaStreamSource(mediaStream);
+
+//     // Create analyser for volume metering
+//     analyser = audioContext.createAnalyser();
+//     analyser.fftSize = 2048;
+//     source.connect(analyser);
+
+//     // Create script processor for audio capture (deprecated but widely supported)
+//     // For better performance, AudioWorklet would be preferred, but this works reliably
+//     scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+//     // Process audio data
+//     scriptProcessor.onaudioprocess = (event) => {
+//       const inputData = event.inputBuffer.getChannelData(0);
+      
+//       // Copy audio data (convert Float32Array to Array for serialization if needed)
+//       const audioArray = new Float32Array(inputData.length);
+//       audioArray.set(inputData);
+
+//       audioBuffers.push({
+//         data: audioArray,
+//         timestamp: Date.now(),
+//         sampleRate: audioContext.sampleRate,
+//       });
+
+//       // Keep only recent buffers (~1 second worth)
+//       if (audioBuffers.length > 15) {
+//         audioBuffers.shift();
+//       }
+//     };
+
+//     // Connect to destination to ensure the audio graph is active
+//     source.connect(scriptProcessor);
+//     scriptProcessor.connect(audioContext.destination);
+
+//     isAudioRunning = true;
+
+//     // Store buffer queue globally for animation loop access
+//     window.audioBufferQueue = audioBuffers;
+
+//     return { success: true };
+//   } catch (error) {
+//     console.error('Microphone access denied or failed:', error);
+//     return { success: false, error: error.message };
+//   }
+// }
+/**
+ * Start microphone capture using AudioWorkletNode
+ */
 export async function startMicrophone() {
   try {
     if (mediaStream) {
@@ -73,37 +143,60 @@ export async function startMicrophone() {
     analyser.fftSize = 2048;
     source.connect(analyser);
 
-    // Create script processor for audio capture (deprecated but widely supported)
-    // For better performance, AudioWorklet would be preferred, but this works reliably
-    scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-    // Process audio data
-    scriptProcessor.onaudioprocess = (event) => {
-      const inputData = event.inputBuffer.getChannelData(0);
+    // Use AudioWorkletNode instead of deprecated ScriptProcessorNode
+    try {
+      // Load the audio worklet processor
+      await audioContext.audioWorklet.addModule('/audio-processor.js');
       
-      // Copy audio data (convert Float32Array to Array for serialization if needed)
-      const audioArray = new Float32Array(inputData.length);
-      audioArray.set(inputData);
+      const workletNode = new AudioWorkletNode(audioContext, 'audio-processor');
+      
+      // Handle messages from the worklet
+      workletNode.port.onmessage = (event) => {
+        const audioArray = new Float32Array(event.data.audioData);
+        
+        audioBuffers.push({
+          data: audioArray,
+          timestamp: Date.now(),
+          sampleRate: audioContext.sampleRate,
+        });
 
-      audioBuffers.push({
-        data: audioArray,
-        timestamp: Date.now(),
-        sampleRate: audioContext.sampleRate,
-      });
+        // Keep only recent buffers (~1 second worth)
+        if (audioBuffers.length > 15) {
+          audioBuffers.shift();
+        }
+      };
 
-      // Keep only recent buffers (~1 second worth)
-      if (audioBuffers.length > 15) {
-        audioBuffers.shift();
-      }
-    };
+      scriptProcessor = workletNode;
+      source.connect(workletNode);
+      workletNode.connect(audioContext.destination);
 
-    // Connect to destination to ensure the audio graph is active
-    source.connect(scriptProcessor);
-    scriptProcessor.connect(audioContext.destination);
+    } catch (error) {
+      console.warn('AudioWorklet not supported, falling back to ScriptProcessorNode:', error);
+      
+      // Fallback to deprecated ScriptProcessorNode
+      scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      scriptProcessor.onaudioprocess = (event) => {
+        const inputData = event.inputBuffer.getChannelData(0);
+        const audioArray = new Float32Array(inputData.length);
+        audioArray.set(inputData);
+
+        audioBuffers.push({
+          data: audioArray,
+          timestamp: Date.now(),
+          sampleRate: audioContext.sampleRate,
+        });
+
+        if (audioBuffers.length > 15) {
+          audioBuffers.shift();
+        }
+      };
+
+      source.connect(scriptProcessor);
+      scriptProcessor.connect(audioContext.destination);
+    }
 
     isAudioRunning = true;
-
-    // Store buffer queue globally for animation loop access
     window.audioBufferQueue = audioBuffers;
 
     return { success: true };
@@ -112,7 +205,6 @@ export async function startMicrophone() {
     return { success: false, error: error.message };
   }
 }
-
 /**
  * Stop microphone capture
  */

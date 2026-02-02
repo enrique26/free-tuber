@@ -15,7 +15,7 @@
 import { Application, Container, Sprite } from 'pixi.js';
 import { initAudio, startMicrophone, stopMicrophone, getAudioLevel } from './audio.js';
 import { initLipSync, processAudioBuffer, getPhonemeCategory } from './lipsync.js';
-import { initAnimation, updateMouthSprite, updateEyeSprite, setEyeState, triggerBlink, loadAssetSprite } from './animation.js';
+import { initAnimation, updateMouthSprite, updateEyeSprite, setEyeState, triggerBlink, loadAssetSprite, loadDefaultAssets } from './animation.js';
 import { initUI } from './ui.js';
 
 /**
@@ -181,6 +181,10 @@ async function main() {
     // Initialize animation system
     await initAnimation(layers);
     console.log('✅ Animation system initialized');
+
+    // Load default assets from assets folder
+    await loadDefaultAssets('/assets');
+    console.log('✅ Default assets loaded');
 
     // Create audio processor
     const audioProcessor = createAudioProcessor();

@@ -118,6 +118,22 @@ Open `https://localhost:5173` in your browser.
 3. Choose your PNG file(s)
 4. Asset will be cached and ready for use
 
+## default assets
+
+add the basic sounds for mouth movement, eyes and body, in the public/assets folder, with this names:
+
+- body.png
+- eye_closed.png
+- eye_open.png
+- mouth_a.png
+- mouth_e.png
+- mouth_u.png
+- mouth_o.png
+- mouth_f.png
+- mouth_m.png
+- mouth_closed.png
+- mouth_idle.png
+
 **Recommended Asset Dimensions:**
 
 - Body: 400×600 pixels
