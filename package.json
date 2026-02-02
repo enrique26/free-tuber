@@ -1,0 +1,19 @@
+{
+  "name": "vtuber-2d-animator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Real-time 2D VTuber character animator with microphone-driven lip sync",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@vitejs/plugin-basic-ssl": "^1.0.0"
+  }
+}

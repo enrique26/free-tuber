@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+IMPLEMENTATION.md
+
+# Build outputs
+dist/
+build/
+
+# Development
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Vite
+.vite/
+
+# Runtime
+public/assets/user-uploads/
+temp/
+cache/
