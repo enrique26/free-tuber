@@ -23,7 +23,7 @@
 
 let rhubarb = null;
 let phonemeHistory = [];
-const SMOOTHING_FACTOR = 0.5; // Blend between new and previous phoneme (0-1)
+const SMOOTHING_FACTOR = 0.9; // Blend between new and previous phoneme (0-1)
 
 /**
  * Phoneme to animation category mapping
